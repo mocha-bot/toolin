@@ -8,7 +8,26 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/mocha-bot/toolin/error_code_generator/templates"
 	"gopkg.in/yaml.v2"
+)
+
+const (
+	packageName = "error_codes"
+)
+
+var (
+	templateMap = map[string]string{
+		"go":     templates.TemplateGo,
+		"python": templates.TemplatePython,
+		"rust":   templates.TemplateRust,
+	}
+
+	languageFileExtMap = map[string]string{
+		"go":     "go",
+		"python": "py",
+		"rust":   "rs",
+	}
 )
 
 type ErrorDefinition struct {
@@ -25,33 +44,13 @@ type ContextField struct {
 }
 
 type Contract struct {
-	CommonErrors []ErrorDefinition `yaml:"common_errors"`
-	Service      struct {
-		Abbreviation string            `yaml:"abbreviation"`
-		Name         string            `yaml:"name"`
-		Errors       []ErrorDefinition `yaml:"errors"`
-	} `yaml:"service"`
+	Abbreviation string            `yaml:"abbreviation"`
+	Name         string            `yaml:"name"`
+	Errors       []ErrorDefinition `yaml:"errors"`
 }
 
 func generateCode(contract Contract, lang string) (string, error) {
-	var path string
-	var tmpl string
-	var err error
-
-	templateDirPath := "templates/"
-
-	switch lang {
-	case "go":
-		path = templateDirPath + "go_template.tmpl"
-	case "python":
-		path = templateDirPath + "python_template.tmpl"
-	case "rust":
-		path = templateDirPath + "rust_template.tmpl"
-	default:
-		return "", fmt.Errorf("unsupported language: %s", lang)
-	}
-
-	tmpl, err = loadTemplate(path)
+	tmpl, err := parseLanguageTemplate(lang)
 	if err != nil {
 		return "", err
 	}
@@ -60,14 +59,12 @@ func generateCode(contract Contract, lang string) (string, error) {
 		PackageName         string
 		ServiceName         string
 		ServiceAbbreviation string
-		CommonErrors        []ErrorDefinition
 		ServiceErrors       []ErrorDefinition
 	}{
-		PackageName:         "mocha_errors",
-		ServiceName:         contract.Service.Name,
-		ServiceAbbreviation: contract.Service.Abbreviation,
-		CommonErrors:        contract.CommonErrors,
-		ServiceErrors:       contract.Service.Errors,
+		PackageName:         packageName,
+		ServiceName:         contract.Name,
+		ServiceAbbreviation: contract.Abbreviation,
+		ServiceErrors:       contract.Errors,
 	}
 
 	t, err := template.New("code").Funcs(template.FuncMap{
@@ -88,22 +85,17 @@ func generateCode(contract Contract, lang string) (string, error) {
 	return output.String(), nil
 }
 
-func loadTemplate(filename string) (string, error) {
-	tmpl, err := os.ReadFile(filename)
-	if err != nil {
-		return "", fmt.Errorf("failed to read template file %s: %v", filename, err)
+func parseLanguageTemplate(lang string) (string, error) {
+	tmpl, exists := templateMap[lang]
+	if !exists {
+		return "", fmt.Errorf("unsupported language: %s", lang)
 	}
-	return string(tmpl), nil
+
+	return tmpl, nil
 }
 
 func parseLanguageExtFile(lang string) (string, error) {
-	languageFileMap := map[string]string{
-		"go":     "go",
-		"python": "py",
-		"rust":   "rs",
-	}
-
-	fileExtension, exists := languageFileMap[lang]
+	fileExtension, exists := languageFileExtMap[lang]
 	if !exists {
 		return "", fmt.Errorf("unsupported language: %s", lang)
 	}
