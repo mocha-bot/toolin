@@ -1,0 +1,22 @@
+# Generated Python Code
+
+class ErrorCodes:
+    PACKAGE_NAME = "{{ .PackageName }}"
+    SERVICE_NAME = "{{ .ServiceName }}"
+    SERVICE_ABBREVIATION = "{{ .ServiceAbbreviation }}"
+
+    COMMON_ERRORS = {
+        {{ range .CommonErrors }}
+        "{{ .Code }}": "{{ .Message }}",
+        {{ end }}
+    }
+
+    SERVICE_ERRORS = {
+        {{ range .ServiceErrors }}
+        "{{ .Code }}": "{{ .Message }}",
+        {{ end }}
+    }
+
+# Example usage
+if __name__ == "__main__":
+    print(ErrorCodes.COMMON_ERRORS)

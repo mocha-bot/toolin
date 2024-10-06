@@ -1,0 +1,26 @@
+service:
+  abbreviation: MCH
+  name: mochi
+  errors:
+    - code: "03_011"
+      message: "Error due to large user input: {{size}} bytes."
+      category: "Processing"
+      context:
+        - field: "size"
+          type: "int"
+          description: "The size of the input in bytes."
+    - code: "02_005"
+      message: "User {{user_id}} does not have permission to access resource."
+      category: "Authorization"
+      context:
+        - field: "user_id"
+          type: "string"
+          description: "ID of the user attempting access."
+
+common_errors:
+  - code: "01_001"
+    message: "Invalid request format."
+    category: "Validation"
+  - code: "01_002"
+    message: "Invalid authentication token."
+    category: "Authentication"

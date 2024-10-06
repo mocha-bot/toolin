@@ -1,0 +1,33 @@
+pub const SERVICE_ABBREVIATION: &str = "{{.ServiceAbbreviation}}";
+
+// Common error codes shared across services
+pub mod common {
+{{ range .CommonErrors }}
+    pub const {{.Code}}: &str = "{{.Code}}";
+{{ end }}
+}
+
+// {{.ServiceName}} service-specific error codes
+pub mod {{.ServiceName | ToLower}} {
+{{ range .ServiceErrors }}
+    pub const {{.Code}}: &str = concat!(SERVICE_ABBREVIATION, "_{{.Code}}");
+{{ end }}
+}
+
+pub static ERROR_MESSAGES: phf::Map<&'static str, &'static str> = phf_map! {
+{{ range .CommonErrors }}
+    {{.Code}} => "{{.Message}}",
+{{ end }}
+{{ range .ServiceErrors }}
+    {{.Code}} => "{{.Message}}",
+{{ end }}
+};
+
+pub static ERROR_CATEGORIES: phf::Map<&'static str, &'static str> = phf_map! {
+{{ range .CommonErrors }}
+    {{.Code}} => "{{.Category}}",
+{{ end }}
+{{ range .ServiceErrors }}
+    {{.Code}} => "{{.Category}}",
+{{ end }}
+};
